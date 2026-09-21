@@ -1,243 +1,1131 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>UPI Offline Mesh — Demo</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline UPI Mesh | Live Dashboard</title>
     <style>
+        :root {
+            --bg: #07111f;
+            --surface: #0d1929;
+            --surface-2: #101f33;
+            --surface-3: #13263d;
+            --border: rgba(151, 174, 204, .16);
+            --text: #edf5ff;
+            --muted: #8ea3bd;
+            --blue: #66a8ff;
+            --cyan: #2dd4bf;
+            --green: #41d88f;
+            --amber: #f7c65c;
+            --red: #fb7185;
+            --shadow: 0 18px 55px rgba(0, 0, 0, .28);
+        }
+
         * { box-sizing: border-box; }
+        html { scroll-behavior: smooth; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            margin: 0; padding: 24px; background: #0d1117; color: #e6edf3;
+            margin: 0;
+            color: var(--text);
+            background:
+                radial-gradient(circle at 18% -10%, rgba(102, 168, 255, .16), transparent 35%),
+                radial-gradient(circle at 90% 12%, rgba(45, 212, 191, .08), transparent 28%),
+                var(--bg);
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
         }
-        h1 { margin-top: 0; color: #f0f6fc; }
-        h2 { color: #58a6ff; border-bottom: 1px solid #30363d; padding-bottom: 4px; margin-top: 32px; }
-        .container { max-width: 1200px; margin: 0 auto; }
-        .grid { display: grid; gap: 16px; }
-        .grid-2 { grid-template-columns: 1fr 1fr; }
-        .grid-3 { grid-template-columns: repeat(3, 1fr); }
-        .card {
-            background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 16px;
+
+        button, input, select { font: inherit; }
+        button { border: 0; }
+
+        .page {
+            width: min(1380px, calc(100% - 40px));
+            margin: 0 auto;
+            padding: 28px 0 40px;
         }
+
+        .topbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            margin-bottom: 24px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-mark {
+            width: 46px;
+            height: 46px;
+            border-radius: 14px;
+            display: grid;
+            place-items: center;
+            background: linear-gradient(145deg, #173c6a, #102441);
+            border: 1px solid rgba(120, 166, 224, .25);
+            box-shadow: 0 10px 25px rgba(36, 99, 168, .2);
+            font-size: 22px;
+        }
+
+        h1, h2, h3, p { margin-top: 0; }
+        h1 { margin-bottom: 3px; font-size: clamp(24px, 3vw, 34px); letter-spacing: -.7px; }
+        .subtitle { color: var(--muted); margin: 0; font-size: 13px; }
+
+        .connection {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 12px;
+            border: 1px solid var(--border);
+            border-radius: 999px;
+            background: rgba(13, 25, 41, .82);
+            color: var(--muted);
+            font-size: 12px;
+            white-space: nowrap;
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--amber);
+            box-shadow: 0 0 0 5px rgba(247, 198, 92, .08);
+        }
+
+        .connection.online .connection-dot {
+            background: var(--green);
+            box-shadow: 0 0 0 5px rgba(65, 216, 143, .08);
+        }
+
+        .hero {
+            display: grid;
+            grid-template-columns: 1.6fr .9fr;
+            gap: 18px;
+            margin-bottom: 18px;
+        }
+
+        .panel {
+            background: linear-gradient(180deg, rgba(16, 31, 51, .94), rgba(10, 22, 37, .96));
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            box-shadow: var(--shadow);
+        }
+
+        .panel-pad { padding: 20px; }
+
+        .flow-panel { min-height: 540px; }
+        .eyebrow {
+            text-transform: uppercase;
+            letter-spacing: 1.15px;
+            color: #7f9ab9;
+            font-size: 10px;
+            font-weight: 800;
+            margin-bottom: 8px;
+        }
+
+        .panel-title-row {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        h2 { font-size: 19px; margin-bottom: 4px; letter-spacing: -.2px; }
+        .description { color: var(--muted); font-size: 12px; margin: 0; line-height: 1.55; }
+
+        .network {
+            position: relative;
+            height: 385px;
+            border-radius: 16px;
+            overflow: hidden;
+            background:
+                linear-gradient(rgba(132, 170, 219, .035) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(132, 170, 219, .035) 1px, transparent 1px),
+                rgba(5, 14, 26, .68);
+            background-size: 32px 32px;
+            border: 1px solid rgba(151, 174, 204, .09);
+        }
+
+        .zone {
+            position: absolute;
+            top: 20px;
+            bottom: 20px;
+            border-radius: 18px;
+            pointer-events: none;
+        }
+
+        .zone-mesh {
+            left: 16px;
+            right: 27%;
+            border: 1px dashed rgba(102, 168, 255, .24);
+            background: rgba(81, 129, 190, .025);
+        }
+
+        .zone-net {
+            right: 16px;
+            width: 23%;
+            border: 1px dashed rgba(65, 216, 143, .24);
+            background: rgba(65, 216, 143, .025);
+        }
+
+        .zone-label {
+            position: absolute;
+            top: 12px;
+            padding: 4px 8px;
+            border-radius: 999px;
+            background: rgba(7, 17, 31, .84);
+            border: 1px solid var(--border);
+            font-size: 9px;
+            font-weight: 800;
+            letter-spacing: .8px;
+            color: #8da7c7;
+        }
+
+        .zone-label.mesh-label { left: 31px; }
+        .zone-label.net-label { right: 28px; color: #77d5ae; }
+
+        .mesh-edge {
+            position: absolute;
+            height: 3px;
+            transform-origin: 0 50%;
+            border-radius: 99px;
+            background: rgba(120, 151, 187, .32);
+            transition: background .25s ease, box-shadow .25s ease;
+        }
+
+        .mesh-edge.active {
+            background: linear-gradient(90deg, var(--blue), var(--cyan));
+            box-shadow: 0 0 14px rgba(45, 212, 191, .5);
+        }
+
+        .mesh-node {
+            position: absolute;
+            width: 92px;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 4;
+        }
+
+        .node-core {
+            width: 58px;
+            height: 58px;
+            margin: 0 auto 8px;
+            display: grid;
+            place-items: center;
+            border-radius: 18px;
+            background: #16283f;
+            border: 1px solid rgba(150, 178, 215, .22);
+            box-shadow: 0 10px 24px rgba(0, 0, 0, .25);
+            font-size: 25px;
+            transition: transform .2s ease, border-color .2s ease, box-shadow .2s ease;
+        }
+
+        .mesh-node.bridge .node-core {
+            background: rgba(22, 63, 47, .74);
+            border-color: rgba(65, 216, 143, .46);
+        }
+
+        .mesh-node.active .node-core {
+            transform: translateY(-3px);
+            border-color: rgba(45, 212, 191, .9);
+            box-shadow: 0 0 0 6px rgba(45, 212, 191, .06), 0 12px 28px rgba(45, 212, 191, .22);
+        }
+
+        .node-name {
+            font-size: 10px;
+            font-weight: 800;
+            line-height: 1.15;
+            word-break: break-word;
+        }
+
+        .node-state {
+            margin-top: 4px;
+            color: var(--muted);
+            font-size: 9px;
+        }
+
+        .backend {
+            position: absolute;
+            right: 2.9%;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 118px;
+            z-index: 5;
+            text-align: center;
+        }
+
+        .backend-box {
+            border-radius: 15px;
+            padding: 14px 10px;
+            border: 1px solid rgba(102, 168, 255, .3);
+            background: linear-gradient(180deg, rgba(20, 46, 77, .9), rgba(12, 28, 47, .94));
+            box-shadow: 0 12px 30px rgba(16, 58, 105, .18);
+        }
+
+        .backend-icon { font-size: 24px; margin-bottom: 4px; }
+        .backend-title { font-size: 11px; font-weight: 800; }
+        .backend-sub { color: var(--muted); font-size: 9px; margin-top: 3px; }
+
+        .packet {
+            position: absolute;
+            width: 18px;
+            height: 18px;
+            transform: translate(-50%, -50%);
+            border-radius: 6px;
+            background: var(--amber);
+            border: 2px solid #fff7d6;
+            box-shadow: 0 0 0 6px rgba(247, 198, 92, .08), 0 0 18px rgba(247, 198, 92, .65);
+            z-index: 10;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .packet.show { opacity: 1; }
+
+        .network-footer {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 12px;
+            color: var(--muted);
+            font-size: 10px;
+        }
+
+        .network-footer strong { color: #d8e5f5; }
+
+        .stat-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .stat {
+            padding: 12px 13px;
+            border-radius: 13px;
+            background: rgba(6, 17, 30, .72);
+            border: 1px solid rgba(151, 174, 204, .11);
+        }
+
+        .stat-value { font-size: 21px; font-weight: 800; letter-spacing: -.4px; }
+        .stat-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: .8px; margin-top: 3px; }
+
+        .control-panel { display: flex; flex-direction: column; min-height: 540px; }
+        .control-section { padding: 20px; }
+        .control-section + .control-section { border-top: 1px solid var(--border); }
+
+        .form-grid { display: grid; gap: 10px; }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .field { display: grid; gap: 6px; }
+        .field label { color: #9eb3cc; font-size: 10px; font-weight: 700; }
+
+        select, input {
+            width: 100%;
+            padding: 10px 11px;
+            color: var(--text);
+            background: #091524;
+            border: 1px solid rgba(151, 174, 204, .18);
+            border-radius: 10px;
+            outline: none;
+        }
+
+        select:focus, input:focus { border-color: rgba(102, 168, 255, .55); }
+
+        .amount-wrap { position: relative; }
+        .amount-prefix {
+            position: absolute;
+            left: 11px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #9cb3d0;
+            pointer-events: none;
+        }
+        .amount-input { padding-left: 28px; }
+
+        .action-grid { display: grid; gap: 9px; margin-top: 12px; }
+        .btn {
+            width: 100%;
+            padding: 11px 13px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 800;
+            font-size: 12px;
+            transition: transform .15s ease, filter .15s ease;
+        }
+        .btn:hover { filter: brightness(1.08); transform: translateY(-1px); }
+        .btn.primary { background: linear-gradient(135deg, #2e7ff0, #2365c4); color: white; }
+        .btn.secondary { background: #163658; color: #cfe0f4; border: 1px solid rgba(102, 168, 255, .2); }
+        .btn.success { background: linear-gradient(135deg, #1f9f68, #167f51); color: white; }
+        .btn.danger { background: #3b1d29; color: #ffc1cc; border: 1px solid rgba(251, 113, 133, .2); }
+        .btn:disabled { opacity: .55; cursor: not-allowed; transform: none; }
+
+        .stage-list { display: grid; gap: 8px; }
+        .stage {
+            display: grid;
+            grid-template-columns: 27px 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 9px 10px;
+            border-radius: 10px;
+            background: rgba(9, 20, 36, .65);
+            border: 1px solid rgba(151, 174, 204, .09);
+        }
+        .stage-num {
+            width: 27px;
+            height: 27px;
+            display: grid;
+            place-items: center;
+            border-radius: 8px;
+            background: #173250;
+            color: #9cc4f7;
+            font-size: 11px;
+            font-weight: 900;
+        }
+        .stage-title { font-size: 11px; font-weight: 800; }
+        .stage-sub { color: var(--muted); font-size: 9px; margin-top: 2px; }
+        .stage-state { color: #8aa5c3; font-size: 9px; font-weight: 700; }
+        .stage.done .stage-num { background: rgba(65, 216, 143, .13); color: #72e2ab; }
+        .stage.current { border-color: rgba(45, 212, 191, .32); }
+        .stage.current .stage-num { background: rgba(45, 212, 191, .13); color: #6df0dc; }
+
+        .layout-grid { display: grid; grid-template-columns: 1.04fr .96fr; gap: 18px; margin-top: 18px; }
+        .table-wrap { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; min-width: 560px; }
+        th, td { padding: 11px 10px; border-bottom: 1px solid rgba(151, 174, 204, .10); text-align: left; }
+        th { color: #8299b4; text-transform: uppercase; font-size: 9px; letter-spacing: .8px; }
+        td { font-size: 11px; }
+        tbody tr:hover { background: rgba(102, 168, 255, .025); }
+        .money { color: #7be8af; font-weight: 800; }
+
+        .devices { display: grid; gap: 9px; }
         .device {
-            border: 1px solid #30363d; border-radius: 6px; padding: 12px; margin-bottom: 8px;
-            background: #0d1117;
+            display: grid;
+            grid-template-columns: 34px 1fr auto;
+            gap: 10px;
+            align-items: center;
+            padding: 11px;
+            border-radius: 12px;
+            background: rgba(8, 18, 31, .72);
+            border: 1px solid rgba(151, 174, 204, .10);
         }
-        .device.bridge { border-color: #2ea043; background: #052e16; }
-        .device.offline { opacity: 0.85; }
-        .badge {
-            display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 10px;
-            font-weight: 600; margin-left: 8px;
+        .device-icon {
+            width: 34px; height: 34px; border-radius: 10px; display: grid; place-items: center;
+            background: #13283f; font-size: 17px;
         }
-        .badge-online { background: #2ea043; color: white; }
-        .badge-offline { background: #6e7681; color: white; }
-        .packet-id {
-            font-family: 'Consolas', 'Monaco', monospace; font-size: 11px;
-            background: #21262d; padding: 2px 6px; border-radius: 3px; margin: 2px;
-            display: inline-block;
+        .device.bridge .device-icon { background: rgba(31, 122, 83, .18); }
+        .device-name { font-weight: 800; font-size: 11px; }
+        .device-meta { color: var(--muted); font-size: 9px; margin-top: 3px; }
+        .pill {
+            padding: 4px 7px;
+            border-radius: 999px;
+            font-size: 9px;
+            font-weight: 800;
+            white-space: nowrap;
         }
-        button {
-            background: #238636; color: white; border: none; padding: 8px 16px;
-            border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;
-            margin: 4px;
+        .pill.offline { background: rgba(142, 163, 189, .10); color: #a6bad1; }
+        .pill.bridge { background: rgba(65, 216, 143, .10); color: #77e5b0; }
+
+        .log {
+            height: 255px;
+            overflow: auto;
+            padding: 12px;
+            border-radius: 13px;
+            background: #050c15;
+            border: 1px solid rgba(151, 174, 204, .10);
+            font: 11px/1.65 Consolas, Monaco, monospace;
+            color: #8ee6bb;
         }
-        button:hover { background: #2ea043; }
-        button.danger { background: #da3633; }
-        button.danger:hover { background: #f85149; }
-        button.secondary { background: #1f6feb; }
-        button.secondary:hover { background: #388bfd; }
-        input, select {
-            background: #0d1117; color: #e6edf3; border: 1px solid #30363d;
-            border-radius: 4px; padding: 6px 10px; font-size: 14px; margin: 4px;
+        .log-row { padding: 2px 0; }
+        .log-time { color: #64809f; }
+
+        .empty { color: var(--muted); text-align: center; padding: 28px 12px; font-size: 11px; }
+
+        .status-settled { color: #73e4aa; font-weight: 800; }
+        .status-rejected { color: #ff899c; font-weight: 800; }
+
+        .foot-note {
+            margin-top: 18px;
+            color: #7188a3;
+            text-align: center;
+            font-size: 10px;
         }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; }
-        th, td { text-align: left; padding: 8px; border-bottom: 1px solid #30363d; }
-        th { color: #8b949e; font-weight: 600; font-size: 12px; text-transform: uppercase; }
-        .status-SETTLED { color: #56d364; font-weight: 600; }
-        .status-REJECTED { color: #f85149; font-weight: 600; }
-        .status-DUPLICATE_DROPPED { color: #d29922; font-weight: 600; }
-        .status-INVALID { color: #f85149; font-weight: 600; }
-        #log {
-            background: #010409; color: #7ee787; padding: 12px; border-radius: 6px;
-            font-family: 'Consolas', 'Monaco', monospace; font-size: 12px;
-            max-height: 220px; overflow-y: auto; white-space: pre-wrap;
-            border: 1px solid #30363d;
+
+
+        /* --- packet journey HUD --- */
+        .journey-hud {
+            margin-top: 12px;
+            display: grid;
+            gap: 9px;
+            padding: 11px 12px;
+            border-radius: 14px;
+            background: rgba(5, 13, 24, .72);
+            border: 1px solid rgba(151, 174, 204, .11);
         }
-        .controls { background: #161b22; padding: 16px; border-radius: 8px;
-                    border: 1px solid #30363d; margin-bottom: 16px; }
-        .step-num {
-            display: inline-block; background: #58a6ff; color: white;
-            border-radius: 50%; width: 24px; height: 24px; text-align: center;
-            line-height: 24px; font-weight: 600; margin-right: 8px;
+        .journey-top { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+        .journey-title { font-size:10px; font-weight:900; letter-spacing:.9px; text-transform:uppercase; color:#9db3cc; }
+        .journey-state { font-size:10px; font-weight:800; color:#eaf5ff; }
+        .journey-bar { height:7px; border-radius:99px; overflow:hidden; background:#0b1828; border:1px solid rgba(151,174,204,.10); }
+        .journey-progress { width:0%; height:100%; border-radius:99px; background:linear-gradient(90deg,#66a8ff,#2dd4bf,#41d88f); transition:width .25s ease; }
+        .hop-row { display:flex; align-items:center; gap:6px; overflow:auto; padding-bottom:2px; scrollbar-width:thin; }
+        .hop-chip { flex:0 0 auto; padding:6px 8px; border-radius:9px; border:1px solid rgba(151,174,204,.11); background:#0d1d30; color:#7f96b0; font-size:9px; font-weight:800; }
+        .hop-chip.active { border-color:rgba(45,212,191,.55); background:rgba(45,212,191,.09); color:#88f2df; box-shadow:0 0 16px rgba(45,212,191,.08); }
+        .hop-chip.done { border-color:rgba(65,216,143,.25); color:#76d9a8; }
+        .hop-arrow { color:#4c6683; font-size:10px; flex:0 0 auto; }
+        .hop-detail { color:#7f96b0; font-size:10px; line-height:1.4; min-height:14px; }
+        .packet::after { content:'›'; position:absolute; right:-8px; top:-3px; font-size:14px; color:#fff7d6; transform:rotate(-18deg); opacity:.9; }
+        .mesh-edge.active { animation: edgePulse .85s ease-in-out infinite alternate; }
+        @keyframes edgePulse { from { filter:brightness(.9); } to { filter:brightness(1.55); } }
+        .mesh-node.active .node-core { animation: nodePulse .85s ease-in-out infinite alternate; }
+        @keyframes nodePulse { from { box-shadow:0 0 0 5px rgba(45,212,191,.05), 0 10px 22px rgba(45,212,191,.12); } to { box-shadow:0 0 0 9px rgba(45,212,191,.035), 0 0 26px rgba(45,212,191,.28); } }
+        .backend.uploading .backend-box { animation: backendPulse .75s ease-in-out infinite alternate; border-color:rgba(65,216,143,.7); }
+        @keyframes backendPulse { from { box-shadow:0 12px 30px rgba(16,58,105,.18); } to { box-shadow:0 0 30px rgba(65,216,143,.22), 0 12px 30px rgba(16,58,105,.18); } }
+        .event-banner { margin-top:9px; display:flex; align-items:center; gap:8px; color:#92a9c2; font-size:10px; }
+        .event-dot { width:7px; height:7px; border-radius:50%; background:#7188a3; flex:0 0 auto; }
+        .event-dot.active { background:#2dd4bf; box-shadow:0 0 12px rgba(45,212,191,.65); }
+        .event-dot.success { background:#41d88f; box-shadow:0 0 12px rgba(65,216,143,.55); }
+        .event-dot.error { background:#fb7185; box-shadow:0 0 12px rgba(251,113,133,.5); }
+        .btn.loading { position:relative; padding-left:34px; }
+        .btn.loading::before { content:''; position:absolute; left:13px; top:50%; width:11px; height:11px; margin-top:-6px; border:2px solid rgba(255,255,255,.28); border-top-color:#fff; border-radius:50%; animation:spin .65s linear infinite; }
+        @keyframes spin { to { transform:rotate(360deg); } }
+
+        @media (max-width: 1000px) {
+            .hero, .layout-grid { grid-template-columns: 1fr; }
+            .control-panel, .flow-panel { min-height: auto; }
         }
-        .balance { font-family: 'Consolas', monospace; color: #56d364; font-weight: 600; }
-        .small { font-size: 12px; color: #8b949e; }
+
+        @media (max-width: 720px) {
+            .page { width: min(100% - 24px, 1380px); padding-top: 18px; }
+            .topbar { align-items: flex-start; flex-direction: column; }
+            .network { height: 430px; }
+            .stat-strip { grid-template-columns: 1fr 1fr; }
+            .zone-net { width: 28%; }
+            .zone-mesh { right: 31%; }
+            .backend { right: 1.8%; width: 88px; }
+            .mesh-node { width: 84px; }
+        }
+
+        @media (max-width: 520px) {
+            .form-row { grid-template-columns: 1fr; }
+            .network { height: 470px; }
+            .zone-label.net-label { right: 15px; }
+            .backend { top: 79%; right: 5%; width: 105px; }
+            .mesh-node { width: 77px; }
+        }
     </style>
 </head>
 <body>
-<div class="container">
-    <h1>📡 UPI Offline Mesh — Live Demo</h1>
-    <p class="small">
-        Send money in a basement with zero internet. Encrypted packets gossip from phone to phone
-        until one with 4G reaches the backend.
-    </p>
+<div class="page">
+    <header class="topbar">
+        <div class="brand">
+            <div class="brand-mark">📡</div>
+            <div>
+                <h1>Offline UPI Mesh</h1>
+                <p class="subtitle">Live demo dashboard for encrypted offline payment delivery</p>
+            </div>
+        </div>
+        <div id="connection" class="connection"><span class="connection-dot"></span><span id="connectionText">Connecting to backend…</span></div>
+    </header>
 
-    <div class="controls">
-        <h3 style="margin-top:0">🎬 Demo Flow</h3>
+    <section class="hero">
+        <div class="panel flow-panel panel-pad">
+            <div class="panel-title-row">
+                <div>
+                    <div class="eyebrow">Network visualization</div>
+                    <h2>Payment journey through the mesh</h2>
+                    <p class="description">Offline phones share encrypted packets. A device with 4G becomes the bridge to the Spring Boot backend.</p>
+                </div>
+            </div>
 
-        <div>
-            <span class="step-num">1</span><strong>Compose payment</strong> (simulates sender phone)
-            <br>
-            <select id="senderVpa">
-                <option>alice@demo</option>
-                <option>bob@demo</option>
-                <option>carol@demo</option>
-            </select>
-            →
-            <select id="receiverVpa">
-                <option>bob@demo</option>
-                <option>carol@demo</option>
-                <option>alice@demo</option>
-                <option>dave@demo</option>
-            </select>
-            ₹<input type="number" id="amount" value="500" style="width: 100px">
-            PIN <input type="text" id="pin" value="1234" style="width: 80px" maxlength="4">
-            <button onclick="sendPacket()">📤 Inject into Mesh</button>
+            <div id="network" class="network">
+                <div class="zone zone-mesh"></div>
+                <div class="zone zone-net"></div>
+                <div class="zone-label mesh-label">BLUETOOTH-STYLE MESH</div>
+                <div class="zone-label net-label">INTERNET</div>
+                <div id="networkEdges"></div>
+                <div id="networkNodes"></div>
+                <div id="backend" class="backend">
+                    <div class="backend-box">
+                        <div class="backend-icon">🏦</div>
+                        <div class="backend-title">Backend</div>
+                        <div class="backend-sub">Spring Boot API</div>
+                    </div>
+                </div>
+                <div id="movingPacket" class="packet"></div>
+            </div>
+
+            <div class="network-footer">
+                <span><strong id="networkHeadline">Waiting for mesh state…</strong></span>
+                <span>Visual route is representative; backend gossip remains unchanged.</span>
+            </div>
+
+            <div class="stat-strip">
+                <div class="stat"><div id="statDevices" class="stat-value">—</div><div class="stat-label">Devices</div></div>
+                <div class="stat"><div id="statPackets" class="stat-value">—</div><div class="stat-label">Packet copies</div></div>
+                <div class="stat"><div id="statBridges" class="stat-value">—</div><div class="stat-label">4G bridges</div></div>
+                <div class="stat"><div id="statCache" class="stat-value">—</div><div class="stat-label">Idempotency cache</div></div>
+            </div>
+
+            <div class="journey-hud">
+                <div class="journey-top">
+                    <div class="journey-title">Live packet journey</div>
+                    <div id="journeyState" class="journey-state">Idle — create a payment</div>
+                </div>
+                <div class="journey-bar"><div id="journeyProgress" class="journey-progress"></div></div>
+                <div id="hopRow" class="hop-row"></div>
+                <div id="hopDetail" class="hop-detail">The highlighted packet will move one hop at a time during a gossip round.</div>
+            </div>
+            <div class="event-banner"><span id="eventDot" class="event-dot"></span><span id="eventBanner">Waiting for an action.</span></div>
         </div>
 
-        <div style="margin-top: 16px">
-            <span class="step-num">2</span><strong>Gossip</strong> — packets hop device-to-device
-            <button class="secondary" onclick="gossip()">🔄 Run Gossip Round</button>
+        <aside class="panel control-panel">
+            <div class="control-section">
+                <div class="eyebrow">Payment simulator</div>
+                <h2>Send an offline payment</h2>
+                <p class="description">This uses the existing <code>/api/demo/send</code> endpoint and starts at <strong>phone-alice</strong>.</p>
+
+                <div class="form-grid" style="margin-top:14px">
+                    <div class="form-row">
+                        <div class="field">
+                            <label for="senderVpa">FROM</label>
+                            <select id="senderVpa">
+                                <option value="alice@demo">alice@demo</option>
+                                <option value="bob@demo">bob@demo</option>
+                                <option value="carol@demo">carol@demo</option>
+                            </select>
+                        </div>
+                        <div class="field">
+                            <label for="receiverVpa">TO</label>
+                            <select id="receiverVpa">
+                                <option value="bob@demo">bob@demo</option>
+                                <option value="carol@demo">carol@demo</option>
+                                <option value="alice@demo">alice@demo</option>
+                                <option value="dave@demo">dave@demo</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="field">
+                            <label for="amount">AMOUNT</label>
+                            <div class="amount-wrap">
+                                <span class="amount-prefix">₹</span>
+                                <input id="amount" class="amount-input" type="number" min="1" step="1" value="500">
+                            </div>
+                        </div>
+                        <div class="field">
+                            <label for="pin">PIN</label>
+                            <input id="pin" type="password" inputmode="numeric" maxlength="4" value="1234">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="action-grid">
+                    <button id="sendBtn" class="btn primary" type="button" onclick="sendPacket()">📤 Inject payment into mesh</button>
+                    <button id="gossipBtn" class="btn secondary" type="button" onclick="gossip()">🔄 Run gossip round</button>
+                    <button id="flushBtn" class="btn success" type="button" onclick="flushBridges()">📡 Upload bridge packets</button>
+                    <button id="resetBtn" class="btn danger" type="button" onclick="resetMesh()">↺ Reset mesh + cache</button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <div class="eyebrow">Payment lifecycle</div>
+                <div class="stage-list">
+                    <div id="stage1" class="stage current">
+                        <div class="stage-num">1</div>
+                        <div><div class="stage-title">Create & encrypt</div><div class="stage-sub">Payment becomes an encrypted mesh packet</div></div>
+                        <div id="stage1State" class="stage-state">Ready</div>
+                    </div>
+                    <div id="stage2" class="stage">
+                        <div class="stage-num">2</div>
+                        <div><div class="stage-title">Gossip through phones</div><div class="stage-sub">Packets are copied between virtual devices</div></div>
+                        <div id="stage2State" class="stage-state">Waiting</div>
+                    </div>
+                    <div id="stage3" class="stage">
+                        <div class="stage-num">3</div>
+                        <div><div class="stage-title">4G bridge uploads</div><div class="stage-sub">Bridge sends held packets to the backend</div></div>
+                        <div id="stage3State" class="stage-state">Waiting</div>
+                    </div>
+                    <div id="stage4" class="stage">
+                        <div class="stage-num">4</div>
+                        <div><div class="stage-title">Settlement recorded</div><div class="stage-sub">Transaction ledger and balances update</div></div>
+                        <div id="stage4State" class="stage-state">Waiting</div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </section>
+
+    <section class="layout-grid">
+        <div class="panel panel-pad">
+            <div class="panel-title-row">
+                <div>
+                    <div class="eyebrow">Mesh inventory</div>
+                    <h2>Connected devices</h2>
+                    <p class="description">Current packet ownership returned by <code>/api/mesh/state</code>.</p>
+                </div>
+            </div>
+            <div id="devices" class="devices"></div>
         </div>
 
-        <div style="margin-top: 16px">
-            <span class="step-num">3</span><strong>Bridge node walks outside, hits 4G</strong>
-            <button class="secondary" onclick="flushBridges()">📡 Bridges Upload to Backend</button>
-            <span class="small">(parallel — exercises idempotency)</span>
+        <div class="panel panel-pad">
+            <div class="panel-title-row">
+                <div>
+                    <div class="eyebrow">Ledger accounts</div>
+                    <h2>Account balances</h2>
+                    <p class="description">Demo balances from <code>/api/accounts</code>.</p>
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table id="accounts-table">
+                    <thead><tr><th>VPA</th><th>Holder</th><th>Balance</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+            <p id="cacheInfo" class="description" style="margin-top:12px"></p>
         </div>
+    </section>
 
-        <div style="margin-top: 16px">
-            <button class="danger" onclick="resetMesh()">🗑 Reset Mesh + Cache</button>
+    <section class="panel panel-pad" style="margin-top:18px">
+        <div class="panel-title-row">
+            <div>
+                <div class="eyebrow">Server ledger</div>
+                <h2>Recent transactions</h2>
+                <p class="description">Latest records returned by <code>/api/transactions</code>.</p>
+            </div>
         </div>
-    </div>
-
-    <div class="grid grid-2">
-        <div class="card">
-            <h2>📱 Mesh Devices</h2>
-            <div id="devices"></div>
-        </div>
-
-        <div class="card">
-            <h2>🏦 Account Balances</h2>
-            <table id="accounts-table">
-                <thead><tr><th>VPA</th><th>Holder</th><th>Balance</th></tr></thead>
+        <div class="table-wrap">
+            <table id="tx-table">
+                <thead>
+                <tr><th>ID</th><th>From</th><th>To</th><th>Amount</th><th>Status</th><th>Bridge</th><th>Hops</th><th>Settled</th></tr>
+                </thead>
                 <tbody></tbody>
             </table>
-            <p class="small" id="cacheInfo"></p>
         </div>
-    </div>
+    </section>
 
-    <div class="card" style="margin-top: 16px">
-        <h2>📜 Transaction Ledger</h2>
-        <table id="tx-table">
-            <thead><tr>
-                <th>ID</th><th>From</th><th>To</th><th>Amount</th>
-                <th>Status</th><th>Bridge</th><th>Hops</th><th>Settled</th>
-            </tr></thead>
-            <tbody></tbody>
-        </table>
-    </div>
+    <section class="panel panel-pad" style="margin-top:18px">
+        <div class="panel-title-row">
+            <div>
+                <div class="eyebrow">Runtime events</div>
+                <h2>Activity log</h2>
+                <p class="description">Frontend events plus responses from the existing mesh endpoints.</p>
+            </div>
+            <button class="btn secondary" style="width:auto" type="button" onclick="clearLog()">Clear</button>
+        </div>
+        <div id="log" class="log"></div>
+    </section>
 
-    <div class="card" style="margin-top: 16px">
-        <h2>🪵 Activity Log</h2>
-        <div id="log"></div>
-    </div>
+    <div class="foot-note">Frontend-only dashboard update • existing Spring Boot APIs and mesh logic are unchanged</div>
 </div>
 
 <script>
-function log(msg) {
-    const el = document.getElementById('log');
-    el.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg + '\n' + el.textContent;
-}
-
-async function refresh() {
-    // Mesh state
-    const m = await fetch('/api/mesh/state').then(r => r.json());
-    const devicesDiv = document.getElementById('devices');
-    devicesDiv.innerHTML = m.devices.map(d => `
-        <div class="device ${d.hasInternet ? 'bridge' : 'offline'}">
-            <strong>${d.deviceId}</strong>
-            <span class="badge ${d.hasInternet ? 'badge-online' : 'badge-offline'}">
-                ${d.hasInternet ? '🌐 4G' : '🚫 OFFLINE'}
-            </span>
-            <span class="small">holding ${d.packetCount} packet(s)</span>
-            <div>${d.packetIds.map(id => `<span class="packet-id">${id}</span>`).join('')}</div>
-        </div>
-    `).join('');
-    document.getElementById('cacheInfo').textContent =
-        `Idempotency cache size: ${m.idempotencyCacheSize}`;
-
-    // Accounts
-    const accs = await fetch('/api/accounts').then(r => r.json());
-    document.querySelector('#accounts-table tbody').innerHTML = accs.map(a => `
-        <tr><td>${a.vpa}</td><td>${a.holderName}</td>
-            <td class="balance">₹${parseFloat(a.balance).toFixed(2)}</td></tr>
-    `).join('');
-
-    // Transactions
-    const txs = await fetch('/api/transactions').then(r => r.json());
-    document.querySelector('#tx-table tbody').innerHTML = txs.map(t => `
-        <tr>
-            <td>${t.id}</td><td>${t.senderVpa}</td><td>${t.receiverVpa}</td>
-            <td class="balance">₹${parseFloat(t.amount).toFixed(2)}</td>
-            <td class="status-${t.status}">${t.status}</td>
-            <td>${t.bridgeNodeId}</td><td>${t.hopCount}</td>
-            <td class="small">${new Date(t.settledAt).toLocaleTimeString()}</td>
-        </tr>
-    `).join('');
-}
-
-async function sendPacket() {
-    const body = {
-        senderVpa: document.getElementById('senderVpa').value,
-        receiverVpa: document.getElementById('receiverVpa').value,
-        amount: parseFloat(document.getElementById('amount').value),
-        pin: document.getElementById('pin').value,
-        ttl: 5,
-        startDevice: 'phone-alice'
+    const state = {
+        mesh: null,
+        busy: false,
+        refreshTimer: null,
+        animationToken: 0,
+        highlightedPacket: null,
+        activeNode: null,
+        activeHop: -1
     };
-    const r = await fetch('/api/demo/send', {
-        method: 'POST', headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify(body)
-    }).then(r => r.json());
-    log(`📤 Packet ${r.packetId.substring(0,8)} encrypted & injected at ${r.injectedAt} (TTL ${r.ttl})`);
-    log(`   ciphertext (truncated): ${r.ciphertextPreview}`);
-    refresh();
-}
 
-async function gossip() {
-    const r = await fetch('/api/mesh/gossip', {method: 'POST'}).then(r => r.json());
-    log(`🔄 Gossip: ${r.transfers} transfer(s) — ${JSON.stringify(r.deviceCounts)}`);
-    refresh();
-}
+    const REQUEST_TIMEOUT_MS = 12000;
 
-async function flushBridges() {
-    const r = await fetch('/api/mesh/flush', {method: 'POST'}).then(r => r.json());
-    log(`📡 ${r.uploadsAttempted} bridge upload(s):`);
-    r.results.forEach(res => {
-        log(`   ${res.bridgeNode} packet ${res.packetId} → ${res.outcome}` +
-            (res.reason ? ` (${res.reason})` : ''));
-    });
-    refresh();
-}
+    function esc(value) {
+        return String(value == null ? '' : value).replace(/[&<>"']/g, function (c) {
+            return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;' })[c];
+        });
+    }
 
-async function resetMesh() {
-    await fetch('/api/mesh/reset', {method: 'POST'});
-    log('🗑 mesh + idempotency cache cleared');
-    refresh();
-}
+    function log(message) {
+        const el = document.getElementById('log');
+        const row = document.createElement('div');
+        row.className = 'log-row';
+        row.innerHTML = '<span class="log-time">[' + esc(new Date().toLocaleTimeString()) + ']</span> ' + esc(message);
+        el.prepend(row);
+    }
+    function clearLog() { document.getElementById('log').innerHTML = ''; }
 
-refresh();
-setInterval(refresh, 3000);
+    function setConnection(online, text) {
+        document.getElementById('connection').classList.toggle('online', online);
+        document.getElementById('connectionText').textContent = text;
+    }
+
+    function setBusy(busy, activeButton) {
+        state.busy = busy;
+        ['sendBtn','gossipBtn','flushBtn','resetBtn'].forEach(function (id) {
+            const el = document.getElementById(id);
+            el.disabled = busy;
+            el.classList.toggle('loading', busy && id === activeButton);
+        });
+    }
+
+    function setBanner(text, type) {
+        document.getElementById('eventBanner').textContent = text;
+        const dot = document.getElementById('eventDot');
+        dot.className = 'event-dot' + (type ? ' ' + type : '');
+    }
+
+    function setJourney(text, progress, detail) {
+        document.getElementById('journeyState').textContent = text;
+        document.getElementById('journeyProgress').style.width = Math.max(0, Math.min(100, progress || 0)) + '%';
+        if (detail != null) document.getElementById('hopDetail').textContent = detail;
+    }
+
+    function setStages(stage, activeText) {
+        const items = [1,2,3,4].map(function (n) { return document.getElementById('stage' + n); });
+        items.forEach(function (el, i) {
+            el.classList.remove('done','current');
+            if (i < stage - 1) el.classList.add('done');
+            if (i === stage - 1) el.classList.add('current');
+        });
+        document.getElementById('stage1State').textContent = stage > 1 ? 'Done' : (stage === 1 ? activeText : 'Ready');
+        document.getElementById('stage2State').textContent = stage > 2 ? 'Done' : (stage === 2 ? activeText : 'Waiting');
+        document.getElementById('stage3State').textContent = stage > 3 ? 'Done' : (stage === 3 ? activeText : 'Waiting');
+        document.getElementById('stage4State').textContent = stage === 4 ? activeText : 'Waiting';
+    }
+
+    function devicesOf(mesh) { return mesh && Array.isArray(mesh.devices) ? mesh.devices : []; }
+    function offlineDevices(mesh) { return devicesOf(mesh).filter(function (d) { return !d.hasInternet; }); }
+    function bridgeDevice(mesh) { return devicesOf(mesh).find(function (d) { return d.hasInternet; }); }
+    function packetIds(device) { return Array.isArray(device && device.packetIds) ? device.packetIds : []; }
+
+    function choosePacket(mesh) {
+        const devs = devicesOf(mesh);
+        for (const d of devs) {
+            if (packetIds(d).length) return packetIds(d)[0];
+        }
+        return null;
+    }
+
+    function packetHolders(mesh, packetId) {
+        if (!packetId) return [];
+        return devicesOf(mesh).filter(function (d) { return packetIds(d).indexOf(packetId) >= 0; }).map(function (d) { return d.deviceId; });
+    }
+
+    function makeRepresentativeRoute(mesh, packetId, includeBackend) {
+        const devs = devicesOf(mesh);
+        const offline = devs.filter(function (d) { return !d.hasInternet; });
+        const bridge = bridgeDevice(mesh);
+        const holders = new Set(packetHolders(mesh, packetId));
+        let start = offline.find(function (d) { return holders.has(d.deviceId); });
+        if (!start) start = offline[0] || bridge;
+
+        const route = [];
+        if (start) route.push(start.deviceId);
+        const ordered = offline.filter(function (d) { return !start || d.deviceId !== start.deviceId; });
+        ordered.forEach(function (d) { route.push(d.deviceId); });
+        if (bridge && route.indexOf(bridge.deviceId) < 0) route.push(bridge.deviceId);
+        if (includeBackend) route.push('__backend__');
+        return route;
+    }
+
+    function positions(mesh) {
+        const devs = devicesOf(mesh);
+        const offline = devs.filter(function (d) { return !d.hasInternet; });
+        const p = {};
+        const coords = [
+            {x:14,y:50}, {x:31,y:24}, {x:31,y:76}, {x:49,y:50}
+        ];
+        offline.forEach(function (d, i) { p[d.deviceId] = coords[i % coords.length]; });
+        const bridge = bridgeDevice(mesh);
+        if (bridge) p[bridge.deviceId] = {x:72,y:50};
+        p.__backend__ = {x:92,y:50};
+        return p;
+    }
+
+    function clearNetwork() {
+        document.getElementById('networkEdges').innerHTML = '';
+        document.getElementById('networkNodes').innerHTML = '';
+    }
+
+    function addEdge(aId, bId, pos, active) {
+        const a = pos[aId], b = pos[bId];
+        if (!a || !b) return;
+        const edge = document.createElement('div');
+        edge.className = 'mesh-edge' + (active ? ' active' : '');
+        edge.style.left = a.x + '%';
+        edge.style.top = a.y + '%';
+        const dx = b.x-a.x, dy=b.y-a.y;
+        edge.style.width = Math.sqrt(dx*dx + dy*dy) + '%';
+        edge.style.transform = 'rotate(' + (Math.atan2(dy, dx)*180/Math.PI) + 'deg)';
+        document.getElementById('networkEdges').appendChild(edge);
+    }
+
+    function drawNetwork(mesh, activeRoute) {
+        clearNetwork();
+        const devs = devicesOf(mesh);
+        if (!devs.length) {
+            document.getElementById('networkHeadline').textContent = 'No mesh devices available';
+            return;
+        }
+        const pos = positions(mesh);
+        const active = new Set(activeRoute || []);
+        const offline = devs.filter(function (d) { return !d.hasInternet; });
+        const bridge = bridgeDevice(mesh);
+
+        // Visible physical-style links. The backend's demo gossip is still a fast-forward
+        // all-to-all operation; these links are the human-friendly packet path visualization.
+        for (let i=0; i<offline.length-1; i++) addEdge(offline[i].deviceId, offline[i+1].deviceId, pos, active.has(offline[i].deviceId) && active.has(offline[i+1].deviceId));
+        if (offline.length >= 3) addEdge(offline[0].deviceId, offline[offline.length-1].deviceId, pos, active.has(offline[0].deviceId) && active.has(offline[offline.length-1].deviceId));
+        if (bridge && offline.length) addEdge(offline[offline.length-1].deviceId, bridge.deviceId, pos, active.has(offline[offline.length-1].deviceId) && active.has(bridge.deviceId));
+        if (bridge) addEdge(bridge.deviceId, '__backend__', pos, active.has(bridge.deviceId) && active.has('__backend__'));
+
+        devs.forEach(function (d) {
+            const p = pos[d.deviceId];
+            if (!p) return;
+            const node = document.createElement('div');
+            node.className = 'mesh-node ' + (d.hasInternet ? 'bridge ' : '') + (active.has(d.deviceId) ? 'active' : '');
+            node.style.left = p.x + '%'; node.style.top = p.y + '%';
+            const label = d.deviceId.replace(/^phone-/, '').replace(/-/g,' ');
+            const count = Number(d.packetCount || 0);
+            node.innerHTML = '<div class="node-core">' + (d.hasInternet ? '📡' : '📱') + '</div>'
+                + '<div class="node-name">' + esc(label) + '</div>'
+                + '<div class="node-state">' + (d.hasInternet ? '4G bridge' : count + ' packet' + (count === 1 ? '' : 's')) + '</div>';
+            document.getElementById('networkNodes').appendChild(node);
+        });
+        document.getElementById('statDevices').textContent = String(devs.length);
+        document.getElementById('statPackets').textContent = String(devs.reduce(function(s,d){return s+Number(d.packetCount||0);},0));
+        document.getElementById('statBridges').textContent = String(devs.filter(function(d){return d.hasInternet;}).length);
+        document.getElementById('statCache').textContent = String(mesh.idempotencyCacheSize == null ? 0 : mesh.idempotencyCacheSize);
+        document.getElementById('networkHeadline').textContent = devs.length + ' devices • ' + devs.reduce(function(s,d){return s+Number(d.packetCount||0);},0) + ' packet copies • ' + devs.filter(function(d){return d.hasInternet;}).length + ' bridge';
+
+        const backend = document.getElementById('backend');
+        backend.classList.toggle('uploading', active.has('__backend__'));
+    }
+
+    function renderHopRow(route, activeIndex) {
+        const el = document.getElementById('hopRow');
+        if (!route || !route.length) { el.innerHTML=''; return; }
+        el.innerHTML = route.map(function (id, i) {
+            const name = id === '__backend__' ? 'Backend' : id.replace(/^phone-/,'').replace(/-/g,' ');
+            const cls = i < activeIndex ? 'done' : (i === activeIndex ? 'active' : '');
+            return (i ? '<span class="hop-arrow">→</span>' : '') + '<span class="hop-chip ' + cls + '">' + esc(name) + '</span>';
+        }).join('');
+    }
+
+    function setActiveHop(route, index, phrase) {
+        state.activeHop = index;
+        const id = route[index];
+        state.activeNode = id;
+        renderHopRow(route, index);
+        const total = Math.max(1, route.length - 1);
+        const progress = index <= 0 ? 0 : (index / (route.length - 1)) * 100;
+        const label = id === '__backend__' ? 'Spring Boot backend' : id.replace(/^phone-/,'').replace(/-/g,' ');
+        setJourney('Hop ' + Math.min(index,total) + '/' + total + ' • ' + label, progress, phrase || ('Packet is currently at ' + label + '.'));
+    }
+
+    function wait(ms) { return new Promise(function(resolve){ setTimeout(resolve, ms); }); }
+
+    async function animateRoute(mesh, route, packetId, stepMs) {
+        const token = ++state.animationToken;
+        const pos = positions(mesh);
+        const packet = document.getElementById('movingPacket');
+        if (!route || route.length < 1) { packet.classList.remove('show'); return; }
+        renderHopRow(route, 0);
+        setActiveHop(route, 0, packetId ? ('Packet ' + packetId + ' starts at the source device.') : 'Packet starts at the source device.');
+        const first = pos[route[0]];
+        if (first) { packet.style.left=first.x+'%'; packet.style.top=first.y+'%'; packet.classList.add('show'); }
+
+        for (let i=0; i<route.length-1; i++) {
+            if (token !== state.animationToken) return false;
+            const from=pos[route[i]], to=pos[route[i+1]];
+            if (!from || !to) continue;
+            setActiveHop(route, i, 'Sending packet ' + (packetId || '…') + ' from ' + route[i].replace(/^phone-/,'') + ' to ' + route[i+1].replace(/^phone-/,'').replace('__backend__','Spring Boot') + '.');
+            const start=performance.now();
+            const duration=stepMs || 850;
+            await new Promise(function(resolve){
+                function frame(now){
+                    if (token !== state.animationToken) return resolve();
+                    const t=Math.min(1,(now-start)/duration);
+                    const e=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2;
+                    packet.style.left=(from.x+(to.x-from.x)*e)+'%';
+                    packet.style.top=(from.y+(to.y-from.y)*e)+'%';
+                    if(t<1) requestAnimationFrame(frame); else resolve();
+                }
+                requestAnimationFrame(frame);
+            });
+            setActiveHop(route, i+1, 'Packet arrived at ' + (route[i+1] === '__backend__' ? 'Spring Boot backend' : route[i+1].replace(/^phone-/,'').replace(/-/g,' ')) + '.');
+            await wait(180);
+        }
+        setJourney('Journey complete', 100, 'The visualized packet route has reached its destination.');
+        if(token === state.animationToken) {
+            await wait(250);
+            packet.classList.remove('show');
+        }
+        return true;
+    }
+
+    async function jsonFetch(url, options) {
+        const controller = new AbortController();
+        const opts = Object.assign({}, options || {}, {signal: controller.signal});
+        const timer = setTimeout(function(){ controller.abort(); }, REQUEST_TIMEOUT_MS);
+        try {
+            const response = await fetch(url, opts);
+            const type = response.headers.get('content-type') || '';
+            if (!response.ok) {
+                const body = type.indexOf('application/json') >= 0 ? JSON.stringify(await response.json()) : await response.text();
+                throw new Error(response.status + ' ' + body.slice(0,240));
+            }
+            return type.indexOf('application/json') >= 0 ? response.json() : {};
+        } catch (e) {
+            if (e && e.name === 'AbortError') throw new Error('Request timed out after ' + (REQUEST_TIMEOUT_MS/1000) + 's: ' + url);
+            throw e;
+        } finally { clearTimeout(timer); }
+    }
+
+    async function refresh() {
+        try {
+            const mesh = await jsonFetch('/api/mesh/state');
+            state.mesh = mesh;
+            drawNetwork(mesh, []);
+            const devs=devicesOf(mesh);
+            document.getElementById('devices').innerHTML = devs.length ? devs.map(function(d){
+                const ids=packetIds(d).map(esc).join(', '), count=Number(d.packetCount||0);
+                return '<div class="device '+(d.hasInternet?'bridge':'')+'"><div class="device-icon">'+(d.hasInternet?'📡':'📱')+'</div><div><div class="device-name">'+esc(d.deviceId)+'</div><div class="device-meta">'+count+' packet'+(count===1?'':'s')+(ids?' • '+ids:'')+'</div></div><div class="pill '+(d.hasInternet?'bridge':'offline')+'">'+(d.hasInternet?'4G BRIDGE':'OFFLINE')+'</div></div>';
+            }).join('') : '<div class="empty">No devices returned by the mesh API.</div>';
+            document.getElementById('cacheInfo').textContent='Idempotency cache size: '+String(mesh.idempotencyCacheSize==null?0:mesh.idempotencyCacheSize);
+            setConnection(true,'Backend connected');
+            if (!state.highlightedPacket) state.highlightedPacket=choosePacket(mesh);
+        } catch(e) {
+            setConnection(false,'Backend unavailable');
+            document.getElementById('networkHeadline').textContent='Unable to reach /api/mesh/state';
+            setBanner('Backend connection problem: '+e.message,'error');
+            log('Refresh failed: '+e.message);
+        }
+        try {
+            const accounts=await jsonFetch('/api/accounts');
+            document.querySelector('#accounts-table tbody').innerHTML=(accounts||[]).map(function(a){ const b=Number(a.balance||0); return '<tr><td>'+esc(a.vpa)+'</td><td>'+esc(a.holderName)+'</td><td class="money">₹'+b.toFixed(2)+'</td></tr>'; }).join('') || '<tr><td colspan="3" class="empty">No accounts returned.</td></tr>';
+        } catch(e){ log('Account refresh failed: '+e.message); }
+        try {
+            const txs=await jsonFetch('/api/transactions');
+            document.querySelector('#tx-table tbody').innerHTML=(txs||[]).map(function(t){
+                const amount=Number(t.amount||0), settled=String(t.status||'').toUpperCase()==='SETTLED';
+                const time=t.settledAt?new Date(t.settledAt).toLocaleTimeString():'—';
+                return '<tr><td>'+esc(t.id)+'</td><td>'+esc(t.senderVpa)+'</td><td>'+esc(t.receiverVpa)+'</td><td class="money">₹'+amount.toFixed(2)+'</td><td class="'+(settled?'status-settled':'status-rejected')+'">'+esc(t.status)+'</td><td>'+esc(t.bridgeNodeId)+'</td><td>'+esc(t.hopCount)+'</td><td>'+esc(time)+'</td></tr>';
+            }).join('') || '<tr><td colspan="8" class="empty">No transactions yet.</td></tr>';
+        } catch(e){ log('Transaction refresh failed: '+e.message); }
+    }
+
+    async function sendPacket() {
+        if(state.busy) return;
+        const sender=document.getElementById('senderVpa').value, receiver=document.getElementById('receiverVpa').value;
+        const amount=Number(document.getElementById('amount').value), pin=document.getElementById('pin').value;
+        if(sender===receiver){ setBanner('Choose different sender and receiver.','error'); log('Payment rejected in UI: sender and receiver must be different.'); return; }
+        if(!Number.isFinite(amount)||amount<=0){ setBanner('Enter a valid amount greater than zero.','error'); return; }
+        setBusy(true,'sendBtn');
+        try{
+            setStages(1,'Encrypting');
+            setJourney('Creating encrypted packet',5,'Payment data is being packaged by the existing demo API.');
+            setBanner('Creating encrypted payment at phone-alice…','active');
+            const result=await jsonFetch('/api/demo/send',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({senderVpa:sender,receiverVpa:receiver,amount:amount,pin:pin,ttl:5,startDevice:'phone-alice'})});
+            state.highlightedPacket=String(result.packetId||'').substring(0,8) || choosePacket(state.mesh);
+            log('Packet '+String(result.packetId||'').substring(0,8)+' created and injected at '+result.injectedAt+'.');
+            log('Encrypted packet preview: '+result.ciphertextPreview);
+            await refresh();
+            const mesh=state.mesh;
+            const route=[...makeRepresentativeRoute(mesh,state.highlightedPacket,false)].slice(0,1);
+            drawNetwork(mesh,route);
+            setActiveHop(route,0,'Packet '+state.highlightedPacket+' is waiting at phone-alice.');
+            setStages(2,'Waiting for gossip');
+            setBanner('Packet created. Run a gossip round to see the hops.','success');
+        }catch(e){ log('Payment injection failed: '+e.message); setBanner('Payment creation failed: '+e.message,'error'); }
+        finally{ setBusy(false); }
+    }
+
+    async function gossip() {
+        if(state.busy) return;
+        setBusy(true,'gossipBtn');
+        try{
+            if(!state.mesh) await refresh();
+            const before=state.mesh;
+            const packet=state.highlightedPacket || choosePacket(before);
+            if(!packet){ setBanner('No packet in the mesh. Inject a payment first.','error'); log('Gossip skipped: no packet available.'); return; }
+            const route=makeRepresentativeRoute(before,packet,true);
+            renderHopRow(route,0);
+            setStages(2,'Gossiping');
+            setBanner('Gossip round running — watch the packet hop between phones.','active');
+            const apiPromise=jsonFetch('/api/mesh/gossip',{method:'POST'});
+            drawNetwork(before,route);
+            const [result]=await Promise.all([apiPromise, animateRoute(before,route.slice(0,Math.max(2,route.length-1)),packet,720)]);
+            log('Gossip round: '+result.transfers+' transfer(s).');
+            log('Device packet counts: '+JSON.stringify(result.deviceCounts));
+            await refresh();
+            drawNetwork(state.mesh, []);
+            if(Number(result.transfers||0)>0){
+                setStages(3,'Waiting for bridge upload');
+                setJourney('Packets propagated',100,'The packet is now held by the devices returned by the mesh state.');
+                setBanner(result.transfers+' packet transfer(s) completed. Bridge can now upload.','success');
+            }else{
+                setStages(2,'No new transfers');
+                setJourney('No new hop',100,'All reachable devices already had this packet, or its TTL prevented forwarding.');
+                setBanner('No new gossip transfers in this round.','active');
+            }
+        }catch(e){ log('Gossip failed: '+e.message); setBanner('Gossip failed: '+e.message,'error'); }
+        finally{ setBusy(false); }
+    }
+
+    async function flushBridges() {
+        if(state.busy) return;
+        setBusy(true,'flushBtn');
+        const mesh=state.mesh;
+        try{
+            if(!mesh) await refresh();
+            const current=state.mesh;
+            const packet=state.highlightedPacket || choosePacket(current);
+            const bridge=bridgeDevice(current);
+            if(!bridge){ setBanner('No 4G bridge device is available.','error'); return; }
+            const route=packet ? [bridge.deviceId,'__backend__'] : ['__backend__'];
+            setStages(3,'Uploading');
+            setJourney('Bridge upload',50,'4G bridge is sending the held packet to the Spring Boot backend.');
+            setBanner('Uploading packet from 4G bridge…','active');
+            drawNetwork(current,route);
+            // Start the real request immediately so the animation and network call happen together.
+            const apiPromise=jsonFetch('/api/mesh/flush',{method:'POST'});
+            if(packet) await animateRoute(current,route,packet,1000);
+            const result=await apiPromise;
+            log('Bridge upload attempted: '+result.uploadsAttempted+' packet(s).');
+            (result.results||[]).forEach(function(item){ log(item.bridgeNode+' → packet '+item.packetId+' → '+item.outcome+(item.reason?' ('+item.reason+')':'')); });
+            const settled=(result.results||[]).some(function(x){return x.outcome==='SETTLED';});
+            const duplicate=(result.results||[]).some(function(x){return x.outcome==='DUPLICATE_DROPPED';});
+            setStages(4,settled?'SETTLED':(duplicate?'Duplicate blocked':'Completed'));
+            setJourney(settled?'Settlement recorded':(duplicate?'Duplicate safely blocked':'Upload completed'),100,settled?'Backend accepted the packet and recorded the transaction.':duplicate?'Idempotency prevented the same packet from being settled twice.':'The bridge request completed; see the activity log for the server outcome.');
+            setBanner(settled?'Payment settled successfully.':duplicate?'Duplicate packet blocked by idempotency.':'Bridge upload completed. See activity log.','success');
+            await refresh();
+            drawNetwork(state.mesh,[]);
+        }catch(e){
+            log('Bridge upload failed: '+e.message);
+            setStages(3,'Upload error');
+            setJourney('Bridge upload stopped',0,'The frontend stopped waiting instead of remaining frozen. Check the activity log for the exact request error.');
+            setBanner('Bridge upload error: '+e.message,'error');
+            if(state.mesh) drawNetwork(state.mesh,[]);
+        }finally{ setBusy(false); }
+    }
+
+    async function resetMesh(){
+        if(state.busy) return;
+        setBusy(true,'resetBtn');
+        try{
+            await jsonFetch('/api/mesh/reset',{method:'POST'});
+            state.highlightedPacket=null;
+            state.animationToken++;
+            document.getElementById('movingPacket').classList.remove('show');
+            document.getElementById('hopRow').innerHTML='';
+            setStages(1,'Ready');
+            setJourney('Idle — mesh reset',0,'Inject a new payment to begin the packet journey.');
+            setBanner('Mesh and idempotency cache reset.','success');
+            log('Mesh devices and idempotency cache cleared.');
+            await refresh();
+            drawNetwork(state.mesh,[]);
+        }catch(e){ log('Reset failed: '+e.message); setBanner('Reset failed: '+e.message,'error'); }
+        finally{ setBusy(false); }
+    }
+
+    async function timedRefresh(){ if(!state.busy) await refresh(); }
+    log('Dashboard loaded. Waiting for backend…');
+    refresh();
+    state.refreshTimer=setInterval(timedRefresh,3000);
 </script>
 </body>
 </html>

@@ -8,7 +8,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
  *
  * Run from terminal:
  *   ./mvnw spring-boot:run        (Linux/Mac)
- *   mvnw.cmd spring-boot:run      (Windows)
+ *   mvnw.cmd spring-boot:rungit       (Windows)
  *
  * Then open http://localhost:8080
  */
